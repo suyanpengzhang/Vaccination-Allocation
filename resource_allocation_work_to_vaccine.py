@@ -88,7 +88,7 @@ for i in range(26):
     for j in range(26):
         value[i,j] = int(value[i,j])
 value_weights = value.copy()
-#value = np.zeros((26,26))
+value = np.zeros((26,26))
 
 emp=[0.9785489423063246,
 0.9749523393023726,
@@ -156,7 +156,7 @@ lambda_ = 1000
 #        0.35323258])
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
-HL = np.ones(26)*totalpop*0.8#*emp
+HL = np.ones(26)*totalpop#*0.8#*emp
 #for i in range(13,25):
 #    HL[i] = 0.6*HL[i]
 #HL[25] = totalpop[25]*(np.sum(totalpop)*0.8-np.sum(totalpop[0:13])-np.sum(totalpop[13:25])*0.6)/totalpop[-1]
@@ -215,10 +215,11 @@ for limit_site in range(6,7):
         return ans
     def vaccinated_at_i(vv):
         ans = 0
-        weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
+        #weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
+        weights = np.array(totalpop)/np.sum(np.array(totalpop))
         for t in range(time_periods):
             for i in range(num_health_districts):
-                ans += vv[t,i]#*weights[i]
+                ans += vv[t,i]*weights[i]
         return ans
     def compute_unvac(y,z,i,t):
         help_ = 0
@@ -406,7 +407,7 @@ for v in vars_:
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('covid/base_od_4time_80herd_real.pkl')
+df.to_pickle('base_4time_popweighted.pkl')
 
 ################################
 #simple formulation
