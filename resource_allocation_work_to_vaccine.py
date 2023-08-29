@@ -277,12 +277,14 @@ for limit_site in range(6,7):
         #upper bound on x
         lm.addConstr(sum_(x)<=limit_site)
         #test on the real case
-        lm.addConstr(x[10] == 1)
-        lm.addConstr(x[12] == 1)
-        lm.addConstr(x[23] == 1)
-        lm.addConstr(x[17] == 1)
-        lm.addConstr(x[3] == 1)
-        lm.addConstr(x[20] == 1)
+# =============================================================================
+#         lm.addConstr(x[10] == 1)
+#         lm.addConstr(x[12] == 1)
+#         lm.addConstr(x[23] == 1)
+#         lm.addConstr(x[17] == 1)
+#         lm.addConstr(x[3] == 1)
+#         lm.addConstr(x[20] == 1)
+# =============================================================================
         #lm.addConstr(v>=0)
         #lm.addGenConstrMax(v, [s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],
         #                       s[8],s[9],s[10],s[11],s[12],s[13],s[14],s[15],
