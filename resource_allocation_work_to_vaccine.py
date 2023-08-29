@@ -88,7 +88,7 @@ for i in range(26):
     for j in range(26):
         value[i,j] = int(value[i,j])
 value_weights = value.copy()
-value = np.zeros((26,26))
+#value = np.zeros((26,26))
 
 emp=[0.9785489423063246,
 0.9749523393023726,
@@ -409,7 +409,7 @@ for v in vars_:
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('base_4time_popweighted.pkl')
+df.to_pickle('base_od_4time_popweighted.pkl')
 
 ################################
 #simple formulation
