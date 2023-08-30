@@ -213,10 +213,12 @@ for limit_site in range(6,7):
             for k in range(num_health_districts):
                 ans += z[j,k,i,t]
         return ans
+with open('weights_prv.pkl', 'rb') as file:
+    weights_bc = pickle.load(file)
     def vaccinated_at_i(vv):
         ans = 0
         #weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
-        weights = np.array(totalpop)/np.sum(np.array(totalpop))
+        weights = np.array(weights_bc)/np.sum(np.array(weights_bc))
         for t in range(time_periods):
             for i in range(num_health_districts):
                 ans += vv[t,i]*weights[i]
@@ -409,7 +411,7 @@ for v in vars_:
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('base_od_4time_popweighted.pkl')
+df.to_pickle('base_od_4time_prvweighted.pkl')
 
 ################################
 #simple formulation
