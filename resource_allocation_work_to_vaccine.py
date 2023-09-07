@@ -146,7 +146,7 @@ for i in range(26):
 #formulation including inconvinence
 sol = []
 #limit_site = number of sites
-lambda_ = 1000
+lambda_ = 2
 # =============================================================================
 # array([0.21334436, 0.29305546, 0.03615045, 0.07924728, 0.46735506,
 #        0.29401151, 0.53411346, 0.18048311, 0.67160676, 0.40473816,
@@ -156,7 +156,7 @@ lambda_ = 1000
 #        0.35323258])
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
-HL = np.ones(26)*totalpop#*0.8#*emp
+HL = np.ones(26)*totalpop*emp
 #for i in range(13,25):
 #    HL[i] = 0.6*HL[i]
 #HL[25] = totalpop[25]*(np.sum(totalpop)*0.8-np.sum(totalpop[0:13])-np.sum(totalpop[13:25])*0.6)/totalpop[-1]
@@ -217,11 +217,19 @@ with open('weights_prv.pkl', 'rb') as file:
     weights_bc = pickle.load(file)
     def vaccinated_at_i(vv):
         ans = 0
+        weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
+        #weights = np.array(weights_bc)/np.sum(np.array(weights_bc))
+        for t in range(time_periods):
+            for i in range(num_health_districts):
+                ans += vv[t,i]#*weights[i]*(0.9**t)
+        return ans
+    def vaccinated_at_i2(vv):
+        ans = 0
         #weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
         weights = np.array(weights_bc)/np.sum(np.array(weights_bc))
         for t in range(time_periods):
             for i in range(num_health_districts):
-                ans += vv[t,i]*weights[i]
+                ans += vv[t,i]#*weights[i]
         return ans
     def compute_unvac(y,z,i,t):
         help_ = 0
@@ -380,6 +388,9 @@ loc_j = [];
 loc_k = [];
 loc_t = [];
 value_sol = [];
+real_v = np.zeros((6,26))
+v_i = 0 
+v_j = 0
 for v in vars_:
     if v.VarName[0] == 'x':
         name.append(v.VarName[0])
@@ -402,6 +413,16 @@ for v in vars_:
         loc_k.append(int(v.VarName[2:-1].split(',')[2]))
         loc_t.append(int(v.VarName[2:-1].split(',')[3]))
         value_sol.append(v.X)
+    if v.VarName[0] == 'v':
+        real_v[v_i,v_j] = v.X
+        if v_j ==25:
+            v_j = 0
+            v_i += 1
+        else:
+            v_j +=1
+print('**************************')
+print(vaccinated_at_i2(real_v))
+print('**************************')
 # =============================================================================
 #     if v.VarName[0] == 'v':
 #         loc_i.append(int(v.VarName[2:-1].split(',')[1]))
@@ -411,7 +432,7 @@ for v in vars_:
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('base_od_4time_prvweighted.pkl')
+df.to_pickle('base_od_4time_emp_2lambda.pkl')
 
 ################################
 #simple formulation
