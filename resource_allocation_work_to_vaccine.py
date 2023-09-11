@@ -146,7 +146,7 @@ for i in range(26):
 #formulation including inconvinence
 sol = []
 #limit_site = number of sites
-lambda_ = 2
+lambda_ = 1
 # =============================================================================
 # array([0.21334436, 0.29305546, 0.03615045, 0.07924728, 0.46735506,
 #        0.29401151, 0.53411346, 0.18048311, 0.67160676, 0.40473816,
@@ -217,11 +217,11 @@ with open('weights_prv.pkl', 'rb') as file:
     weights_bc = pickle.load(file)
     def vaccinated_at_i(vv):
         ans = 0
-        weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
-        #weights = np.array(weights_bc)/np.sum(np.array(weights_bc))
+        weights = 50*np.sum(value_weights,axis=1)/np.sum(value_weights)
+        #weights = np.array(weights_bc)#/np.sum(np.array(weights_bc))
         for t in range(time_periods):
             for i in range(num_health_districts):
-                ans += vv[t,i]#*weights[i]*(0.9**t)
+                ans += vv[t,i]*weights[i]*(0.9**t)
         return ans
     def vaccinated_at_i2(vv):
         ans = 0
@@ -274,16 +274,18 @@ with open('weights_prv.pkl', 'rb') as file:
         y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="y")
         z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
-        s = lm.addVars(2,time_periods,vtype=GRB.CONTINUOUS, name="s") 
-        b = lm.addVars(time_periods,num_health_districts,vtype=GRB.BINARY, name="b") 
-        c = lm.addVars(time_periods,num_health_districts,vtype=GRB.BINARY, name="c") 
+        s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
+# =============================================================================
+#         b = lm.addVars(time_periods,num_health_districts,vtype=GRB.BINARY, name="b") 
+#         c = lm.addVars(time_periods,num_health_districts,vtype=GRB.BINARY, name="c") 
+# =============================================================================
 
         #v = lm.addVar(vtype=GRB.INTEGER,name = "v")
         #s = lm.addVars(num_health_districts,vtype=GRB.INTEGER, name="s") 
         # Set objective
         ##
         #+lambda_*vaccinated_at_i(vv) 
-        lm.setObjective(cost(y,z)+lambda_*vaccinated_at_i(vv)  ,GRB.MINIMIZE)
+        lm.setObjective(cost(y,z)+lambda_*vaccinated_at_i(vv)+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
         #upper bound on x
         lm.addConstr(sum_(x)<=limit_site)
         #test on the real case
@@ -301,6 +303,10 @@ with open('weights_prv.pkl', 'rb') as file:
         #                       s[16],s[17],s[18],s[19],s[20],s[21],s[22],s[23],
         #                       s[24],s[25]],0, "maxconstr")
         #upper bound on y
+        for t in range(2):
+            for i in range(num_health_districts):
+                for j in range(num_health_districts):
+                    lm.addConstr(totalpop[i]-vv[t,i]-totalpop[j]+vv[t,j]<=s[t])
 # =============================================================================
 #         #smooth
 #         for t in range(time_periods):
@@ -390,7 +396,10 @@ loc_t = [];
 value_sol = [];
 real_v = np.zeros((6,26))
 v_i = 0 
+s0 = 0
+s1 = 0
 v_j = 0
+s_i=0
 for v in vars_:
     if v.VarName[0] == 'x':
         name.append(v.VarName[0])
@@ -420,8 +429,15 @@ for v in vars_:
             v_i += 1
         else:
             v_j +=1
+    if v.VarName[0] == 's':
+        if s_i == 0:
+            s0 = v.X
+            s_i+=1
+        else:
+            s1 = v.X
+        print(v.X)
 print('**************************')
-print(vaccinated_at_i2(real_v))
+print(vaccinated_at_i(real_v)+15*(s0+s1))
 print('**************************')
 # =============================================================================
 #     if v.VarName[0] == 'v':
@@ -432,7 +448,7 @@ print('**************************')
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('base_od_4time_emp_2lambda.pkl')
+df.to_pickle('base_od_4time_emp_1lambda_prvweighted.pkl')
 
 ################################
 #simple formulation
