@@ -146,7 +146,7 @@ for i in range(26):
 #formulation including inconvinence
 sol = []
 #limit_site = number of sites
-lambda_ = 1
+lambda_ = 0
 # =============================================================================
 # array([0.21334436, 0.29305546, 0.03615045, 0.07924728, 0.46735506,
 #        0.29401151, 0.53411346, 0.18048311, 0.67160676, 0.40473816,
@@ -448,7 +448,7 @@ print('**************************')
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('base_od_4time_emp_1lambda_prvweighted.pkl')
+df.to_pickle('base_od_4time_emp_0lambda_prvweighted.pkl')
 
 ################################
 #simple formulation
