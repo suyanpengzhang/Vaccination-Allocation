@@ -14,10 +14,10 @@ import random
 
 num_health_districts = 26
 time_periods = 6
-od_flow = pd.read_csv('mean_df_20210224_20210424.csv')
+od_flow = pd.read_csv('data/mean_df_20210224_20210424.csv')
 #c_m = pd.read_csv('C_matrix.csv')
 #c_m_v = c_m.values[:,1:]
-with open("travel_time.pkl", "rb") as file:
+with open("data/travel_time.pkl", "rb") as file:
     c_m_v = pickle.load(file)
 #c_matrix is the inconvinence cost matrix
 c_matrix =np.array([np.array([float(i) for i in j ])for j in c_m_v])
@@ -146,7 +146,7 @@ for i in range(26):
 #formulation including inconvinence
 sol = []
 #limit_site = number of sites
-lambda_ = 0
+lambda_ = 10
 # =============================================================================
 # array([0.21334436, 0.29305546, 0.03615045, 0.07924728, 0.46735506,
 #        0.29401151, 0.53411346, 0.18048311, 0.67160676, 0.40473816,
@@ -213,12 +213,12 @@ for limit_site in range(6,7):
             for k in range(num_health_districts):
                 ans += z[j,k,i,t]
         return ans
-with open('weights_prv.pkl', 'rb') as file:
+with open('data/weights_prv.pkl', 'rb') as file:
     weights_bc = pickle.load(file)
     def vaccinated_at_i(vv):
         ans = 0
-        weights = 50*np.sum(value_weights,axis=1)/np.sum(value_weights)
-        #weights = np.array(weights_bc)#/np.sum(np.array(weights_bc))
+        #weights = 50*np.sum(value_weights,axis=1)/np.sum(value_weights)
+        weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
         for t in range(time_periods):
             for i in range(num_health_districts):
                 ans += vv[t,i]*weights[i]*(0.9**t)
@@ -252,16 +252,18 @@ with open('weights_prv.pkl', 'rb') as file:
             score += s[1,t]
             score -= s[0,t]
         return score
-    def sumb(t):
-        score = 0
-        for i in range(num_health_districts):
-            score += b[t,i]
-        return score
-    def sumc(t):
-        score = 0
-        for i in range(num_health_districts):
-            score += c[t,i]
-        return score
+# =============================================================================
+#     def sumb(t):
+#         score = 0
+#         for i in range(num_health_districts):
+#             score += b[t,i]
+#         return score
+#     def sumc(t):
+#         score = 0
+#         for i in range(num_health_districts):
+#             score += c[t,i]
+#         return score
+# =============================================================================
             
     try:
     
@@ -448,7 +450,7 @@ print('**************************')
 # =============================================================================
     
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('base_od_4time_emp_0lambda_prvweighted.pkl')
+df.to_pickle('Results/base_od_4time_emp_10lambda_prvweighted.pkl')
 
 ################################
 #simple formulation
