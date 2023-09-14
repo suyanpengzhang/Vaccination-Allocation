@@ -146,7 +146,7 @@ for i in range(26):
 #formulation including inconvinence
 sol = []
 #limit_site = number of sites
-lambda_ = 10
+lambda_ = 50
 # =============================================================================
 # array([0.21334436, 0.29305546, 0.03615045, 0.07924728, 0.46735506,
 #        0.29401151, 0.53411346, 0.18048311, 0.67160676, 0.40473816,
@@ -157,20 +157,10 @@ lambda_ = 10
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
 HL = np.ones(26)*totalpop*emp
-#for i in range(13,25):
-#    HL[i] = 0.6*HL[i]
-#HL[25] = totalpop[25]*(np.sum(totalpop)*0.8-np.sum(totalpop[0:13])-np.sum(totalpop[13:25])*0.6)/totalpop[-1]
-#HL = np.zeros(26)
-#HL[0] =totalpop[0]
-#HL[6] = totalpop[6]
-#HL[10] = totalpop[10]
-#HL[17] = totalpop[17]
-#HL[24] = totalpop[24]
+
 for limit_site in range(6,7):
     print('#######################################################################')
-    #for i in range(limit_site):
-    #    greedy_sol.append(np.where(weights ==sorted(weights)[num_health_districts-i-1])[0])
-    #    print(np.where(weights ==sorted(weights)[num_health_districts-i-1]))  
+
     def cost(y,z):
         score = 0
         for t in range(time_periods):
@@ -223,14 +213,14 @@ with open('data/weights_prv.pkl', 'rb') as file:
             for i in range(num_health_districts):
                 ans += vv[t,i]*weights[i]*(0.9**t)
         return ans
-    def vaccinated_at_i2(vv):
-        ans = 0
-        #weights = np.sum(value_weights,axis=1)/np.sum(value_weights)
-        weights = np.array(weights_bc)/np.sum(np.array(weights_bc))
-        for t in range(time_periods):
-            for i in range(num_health_districts):
-                ans += vv[t,i]#*weights[i]
-        return ans
+# =============================================================================
+#     def vaccinated_at_i2(vv):
+#         ans = 0
+#         for t in range(time_periods):
+#             for i in range(num_health_districts):
+#                 ans += vv[t,i]#*weights[i]
+#         return ans
+# =============================================================================
     def compute_unvac(y,z,i,t):
         help_ = 0
         for time in range(t+1):
@@ -239,31 +229,7 @@ with open('data/weights_prv.pkl', 'rb') as file:
                 for k in range(num_health_districts):
                     help_ += z[i,j,k,time]
         return HL[i] - help_
-    def compute_smoothness(y,z,i,t):
-        score = 0
-        for j in range(num_health_districts):
-            score += y[i,j,t]
-            for k in range(num_health_districts):
-                score += z[i,j,k,t]
-        return score/totalpop[i]
-    def help_(s):
-        score = 0
-        for t in range(time_periods):
-            score += s[1,t]
-            score -= s[0,t]
-        return score
-# =============================================================================
-#     def sumb(t):
-#         score = 0
-#         for i in range(num_health_districts):
-#             score += b[t,i]
-#         return score
-#     def sumc(t):
-#         score = 0
-#         for i in range(num_health_districts):
-#             score += c[t,i]
-#         return score
-# =============================================================================
+
             
     try:
     
@@ -277,13 +243,6 @@ with open('data/weights_prv.pkl', 'rb') as file:
         z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
-# =============================================================================
-#         b = lm.addVars(time_periods,num_health_districts,vtype=GRB.BINARY, name="b") 
-#         c = lm.addVars(time_periods,num_health_districts,vtype=GRB.BINARY, name="c") 
-# =============================================================================
-
-        #v = lm.addVar(vtype=GRB.INTEGER,name = "v")
-        #s = lm.addVars(num_health_districts,vtype=GRB.INTEGER, name="s") 
         # Set objective
         ##
         #+lambda_*vaccinated_at_i(vv) 
@@ -299,41 +258,18 @@ with open('data/weights_prv.pkl', 'rb') as file:
 #         lm.addConstr(x[3] == 1)
 #         lm.addConstr(x[20] == 1)
 # =============================================================================
-        #lm.addConstr(v>=0)
-        #lm.addGenConstrMax(v, [s[0],s[1],s[2],s[3],s[4],s[5],s[6],s[7],
-        #                       s[8],s[9],s[10],s[11],s[12],s[13],s[14],s[15],
-        #                       s[16],s[17],s[18],s[19],s[20],s[21],s[22],s[23],
-        #                       s[24],s[25]],0, "maxconstr")
-        #upper bound on y
+        #smooth
         for t in range(2):
             for i in range(num_health_districts):
                 for j in range(num_health_districts):
                     lm.addConstr(totalpop[i]-vv[t,i]-totalpop[j]+vv[t,j]<=s[t])
-# =============================================================================
-#         #smooth
-#         for t in range(time_periods):
-#             lm.addConstr(s[1,t]-s[0,t]<=0.05)
-#             lm.addConstr(sumb(t)==1)
-#             lm.addConstr(sumc(t)==1)
-# =============================================================================
         for i in range(num_health_districts):
-            #total flowout eqauls to population
-            #lm.addConstr(sum_flowin(i)==s[i])
+            #noncommuter get vaccinated
             lm.addConstr(flowout_(y, i)==totalpop[i]-np.sum(value,axis=1)[i])
-            #lm.addConstr(x[i]>=0)
-            #lm.addConstr(x[i]<=1)
             for t in range(time_periods):
-# =============================================================================
-#                 #smooth 1-4
-#                 lm.addConstr(s[1,t]<= compute_smoothness(y,z,i,t)+(1-b[t,i]))
-#                 lm.addConstr(s[1,t]>= compute_smoothness(y,z,i,t))
-#                 lm.addConstr(s[0,t]>= compute_smoothness(y,z,i,t)-(1-c[t,i]))
-#                 lm.addConstr(s[0,t]<= compute_smoothness(y,z,i,t))
-# =============================================================================
                 #constraints on vaccination
                 lm.addConstr(vv[t,i]>=compute_unvac(y,z,i,t))
                 lm.addConstr(vv[t,i]>=0)
-                #lm.addGenConstrMax(vv[t,i],HL[i] - vaccinated_at_i(y,z,i,t),0,"maxconstr")
                 lm.addConstr(capacity_at_i(y,z,i,t)<=400000)
                 for j in range(num_health_districts):
                     lm.addConstr(y[i,j,t]<=999999*x[j])
@@ -342,12 +278,8 @@ with open('data/weights_prv.pkl', 'rb') as file:
                         lm.addConstr(z[i,j,k,t]<=999999*x[k])
                         lm.addConstr(z[i,j,k,t]>=0)
             for j in range(num_health_districts):
-                #lm.addConstr(y[i,j]<=999999*x[j])
-                #lm.addConstr(y[i,j]>=0)
+                #commuter get vaccinated
                 lm.addConstr(flow_z(z,i,j)==value[i][j])
-                #for k in range(num_health_districts):
-                #    lm.addConstr(z[i,j,k]<=999999*x[k])
-                #    lm.addConstr(z[i,j,k]>=0)
         # Optimize model
         #lm.setParam('TimeLimit', 10)
         lm.Params.LogToConsole = 0
@@ -439,19 +371,12 @@ for v in vars_:
             s1 = v.X
         print(v.X)
 print('**************************')
-print(vaccinated_at_i(real_v)+15*(s0+s1))
+print(vaccinated_at_i2(real_v))
 print('**************************')
-# =============================================================================
-#     if v.VarName[0] == 'v':
-#         loc_i.append(int(v.VarName[2:-1].split(',')[1]))
-#         loc_j.append(0)
-#         loc_k.append(0)
-#         loc_t.append(int(v.VarName[2:-1].split(',')[0]))
-# =============================================================================
-    
-df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/base_od_4time_emp_10lambda_prvweighted.pkl')
 
+df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
+df.to_pickle('Results/base_od_4time_emp_50lambda_prvweighted.pkl')
+print('saved')
 ################################
 #simple formulation
 # =============================================================================
