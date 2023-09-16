@@ -10,6 +10,10 @@ import  numpy as np
 import pandas as pd
 import pickle
 import random
+import time
+
+# Record the start time
+start_time = time.time()
 
 
 num_health_districts = 26
@@ -156,22 +160,24 @@ sol = []
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
 HL = np.ones(26)*totalpop*emp
-
+with open("Results/base_od_4time_emp_50lambda_prvweighted_test.pkl", "rb") as file:
+    initials = pickle.load(file)
+dfxrand = initials[initials.name=='x']
+dfyrand = initials[initials.name=='y']
+dfzrand = initials[initials.name=='z']
+groupedx = dfxrand.groupby(['i'])
+resultsx = groupedx.sum()
+groupedy = dfyrand.groupby(['i', 'j','t'])
+resultsy = groupedy.sum()
+groupedz = dfzrand.groupby(['i', 'j','k','t'])
+resultyz = groupedz.sum()
 for limit_site in range(6,7):
     print('#######################################################################')
-    with open('data/weights_prv.pkl', 'rb') as file:
+    with open('data/weights_case.pkl', 'rb') as file:
         weights_bc = pickle.load(file)
-    weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
-    def compute_unvac(y,z,i,t):
-        help_ = 0
-        for time in range(t+1):
-            for j in range(num_health_districts):
-                help_ += y[i,j,time]
-                for k in range(num_health_districts):
-                    help_ += z[i,j,k,time]
-        return HL[i] - help_
-
-    lambda_ = 0           
+    weights = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
+    #weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
+    lambda_ = 50           
     try:
     
         # Create a new model
@@ -184,6 +190,15 @@ for limit_site in range(6,7):
         z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
+        ##initial
+        for i in range(num_health_districts):
+            x[i].start = resultsx['value'][i]
+        for t in range(time_periods):
+            for i in range(num_health_districts):
+                for j in range(num_health_districts):
+                    y[i,j,t].start = resultsy['value'][(i,j,t)]
+                    for k in range(num_health_districts):
+                        z[i,j,k,t].start = resultyz['value'][(i,j,k,t)]
         # Set objective
         ##
         cost_y = gp.quicksum(y[i, j, t] * (2 * c_matrix[i][j]) for i in range(num_health_districts)
@@ -191,6 +206,7 @@ for limit_site in range(6,7):
         cost_z = gp.quicksum(z[i, j, k, t] * D[i][j][k] for i in range(num_health_districts)
                      for j in range(num_health_districts) for k in range(num_health_districts)
                      for t in range(time_periods))
+        
         cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**t) for t in range(time_periods) for i in range(num_health_districts))
         lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
         #upper bound on x
@@ -208,27 +224,31 @@ for limit_site in range(6,7):
         for t in range(2):
             for i in range(num_health_districts):
                 for j in range(num_health_districts):
-                    lm.addConstr(totalpop[i]-vv[t,i]-totalpop[j]+vv[t,j]<=s[t])
+                    lm.addConstr(HL[i]-vv[t,i]-HL[j]+vv[t,j]<=s[t])
         for i in range(num_health_districts):
             #noncommuter get vaccinated
             lm.addConstr(y.sum(i, '*', '*')==totalpop[i]-np.sum(value,axis=1)[i])
             for t in range(time_periods):
                 #constraints on vaccination
-                lm.addConstr(vv[t,i]>=compute_unvac(y,z,i,t))
+                lm.addConstr(vv[t,i]>=-gp.quicksum(y[i,j,t1] for j in range(num_health_districts) for t1 in range(t+1))
+                             -gp.quicksum(z[i,j,k,t1] for j in range(num_health_districts) for k in range(num_health_districts) for t1 in range(t+1))
+                             +HL[i])
                 lm.addConstr(vv[t,i]>=0)
                 lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=400000)
                 for j in range(num_health_districts):
-                    lm.addConstr(y[i,j,t]<=999999*x[j])
+                    lm.addConstr(y[i,j,t]<=400000*x[j])
                     lm.addConstr(y[i,j,t]>=0)
                     for k in range(num_health_districts):
-                        lm.addConstr(z[i,j,k,t]<=999999*x[k])
+                        lm.addConstr(z[i,j,k,t]<=400000*x[k])
                         lm.addConstr(z[i,j,k,t]>=0)
             for j in range(num_health_districts):
                 #commuter get vaccinated
                 lm.addConstr(z.sum(i, j,'*', '*')==value[i][j])
         # Optimize model
         #lm.setParam('TimeLimit', 10)
-        lm.Params.LogToConsole = 0
+        lm.Params.Threads = 18
+        lm.Params.OutputFlag = 1
+        lm.Params.LogToConsole = 1
         lm.optimize()
         count=0
         print('LP:')
@@ -316,12 +336,21 @@ for v in vars_:
         else:
             s1 = v.X
         print(v.X)
-print('**************************')
-print(vaccinated_at_i2(real_v))
-print('**************************')
+end_time = time.time()
+elapsed_time_seconds = end_time - start_time
+
+# Convert elapsed time to hours
+elapsed_time_hours = elapsed_time_seconds / 3600
+
+print(f"Runtime: {elapsed_time_hours:.2f} hours")
+# =============================================================================
+# print('**************************')
+# print(vaccinated_at_i2(real_v))
+# print('**************************')
+# =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/base_od_4time_emp_50lambda_prvweighted.pkl')
+df.to_pickle('Results/base_od_4time_emp_50lambda_odweighted.pkl')
 print('saved')
 ################################
 #simple formulation

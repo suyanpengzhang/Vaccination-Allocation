@@ -10,7 +10,10 @@ import  numpy as np
 import pandas as pd
 import pickle
 import random
+import time
 
+# Record the start time
+start_time = time.time()
 
 num_health_districts = 26
 time_periods = 6
@@ -230,7 +233,15 @@ with open('data/weights_prv.pkl', 'rb') as file:
                     help_ += z[i,j,k,time]
         return HL[i] - help_
 
-            
+    with open("Results/base_od_4time_emp_50lambda_odweighted.pkl", "rb") as file:
+        initials = pickle.load(file)
+    dfxrand = initials[initials.name=='x']
+    dfyrand = initials[initials.name=='y']
+    dfzrand = initials[initials.name=='z']
+    groupedy = dfyrand.groupby(['i', 'j','t'])
+    resultsy = groupedy.sum()
+    groupedz = dfzrand.groupby(['i', 'j','k','t'])
+    resultyz = groupedz.sum()
     try:
     
         # Create a new model
@@ -243,6 +254,18 @@ with open('data/weights_prv.pkl', 'rb') as file:
         z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
+        x[3].start = 1
+        x[4].start = 1
+        x[6].start = 1
+        x[10].start = 1
+        x[15].start = 1
+        x[18].start = 1
+        for t in range(time_periods):
+            for i in range(num_health_districts):
+                for j in range(num_health_districts):
+                    y[i,j,t].start = resultsy['value'][(i,j,t)]
+                    for k in range(num_health_districts):
+                        z[i,j,k,t].start = resultyz['value'][(i,j,k,t)]
         # Set objective
         ##
         #+lambda_*vaccinated_at_i(vv) 
@@ -370,6 +393,14 @@ for v in vars_:
         else:
             s1 = v.X
         print(v.X)
+        
+end_time = time.time()
+elapsed_time_seconds = end_time - start_time
+
+# Convert elapsed time to hours
+elapsed_time_hours = elapsed_time_seconds / 3600
+
+print(f"Runtime: {elapsed_time_hours:.2f} hours")
 print('**************************')
 print(vaccinated_at_i2(real_v))
 print('**************************')
