@@ -159,8 +159,8 @@ sol = []
 #        0.35323258])
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
-HL = np.ones(26)*totalpop*emp
-with open("Results/base_od_4time_emp_50lambda_prvweighted_test.pkl", "rb") as file:
+HL = np.ones(26)*totalpop#*emp
+with open("Results/base_od_4time_emp_2lambda_odweighted.pkl", "rb") as file:
     initials = pickle.load(file)
 dfxrand = initials[initials.name=='x']
 dfyrand = initials[initials.name=='y']
@@ -177,7 +177,7 @@ for limit_site in range(6,7):
         weights_bc = pickle.load(file)
     weights = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     #weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
-    lambda_ = 50           
+    lambda_ = 2
     try:
     
         # Create a new model
@@ -209,6 +209,7 @@ for limit_site in range(6,7):
         
         cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**t) for t in range(time_periods) for i in range(num_health_districts))
         lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
+        # 
         #upper bound on x
         lm.addConstr(x.sum()<=limit_site)
         #test on the real case
@@ -350,7 +351,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/base_od_4time_emp_50lambda_odweighted.pkl')
+df.to_pickle('Results/base_od_4time_total_2lambda_odweighted.pkl')
 print('saved')
 ################################
 #simple formulation
