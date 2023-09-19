@@ -160,7 +160,7 @@ sol = []
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
 HL = np.ones(26)*totalpop#*emp
-with open("Results/base_od_4time_emp_1lambda_odweighted.pkl", "rb") as file:
+with open("Results/base_od_4time_total_1lambda_odweighted.pkl", "rb") as file:
     initials = pickle.load(file)
 dfxrand = initials[initials.name=='x']
 dfyrand = initials[initials.name=='y']
