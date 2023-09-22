@@ -160,25 +160,24 @@ sol = []
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
 HL = np.ones(26)*totalpop*emp
-# =============================================================================
-# with open("Results/base_od_4time_total_50lambda_odweighted.pkl", "rb") as file:
-#     initials = pickle.load(file)
-# dfxrand = initials[initials.name=='x']
-# dfyrand = initials[initials.name=='y']
-# dfzrand = initials[initials.name=='z']
-# groupedx = dfxrand.groupby(['i'])
-# resultsx = groupedx.sum()
-# groupedy = dfyrand.groupby(['i', 'j','t'])
-# resultsy = groupedy.sum()
-# groupedz = dfzrand.groupby(['i', 'j','k','t'])
-# resultyz = groupedz.sum()
-# =============================================================================
+with open("Results/base_od_4time_emp_10lambda_popweighted.pkl", "rb") as file:
+    initials = pickle.load(file)
+dfxrand = initials[initials.name=='x']
+dfyrand = initials[initials.name=='y']
+dfzrand = initials[initials.name=='z']
+groupedx = dfxrand.groupby(['i'])
+resultsx = groupedx.sum()
+groupedy = dfyrand.groupby(['i', 'j','t'])
+resultsy = groupedy.sum()
+groupedz = dfzrand.groupby(['i', 'j','k','t'])
+resultyz = groupedz.sum()
 for limit_site in range(6,7):
     print('#######################################################################')
-    with open('data/weights_case.pkl', 'rb') as file:
+    with open('data/weights_bc.pkl', 'rb') as file:
         weights_bc = pickle.load(file)
-    weights = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
-    #weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
+    weights_bc = totalpop.copy()
+    #weights = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
+    weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
     lambda_ = 10
     try:
     
@@ -193,17 +192,15 @@ for limit_site in range(6,7):
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
         ##initial
-# =============================================================================
-#         for i in range(num_health_districts):
-#             x[i].start = resultsx['value'][i]
-#             #lm.addConstr(x[i] == resultsx['value'][i])
-#         for t in range(time_periods):
-#             for i in range(num_health_districts):
-#                 for j in range(num_health_districts):
-#                     y[i,j,t].start = resultsy['value'][(i,j,t)]
-#                     for k in range(num_health_districts):
-#                         z[i,j,k,t].start = resultyz['value'][(i,j,k,t)]
-# =============================================================================
+        for i in range(num_health_districts):
+            x[i].start = resultsx['value'][i]
+            #lm.addConstr(x[i] == resultsx['value'][i])
+        for t in range(time_periods):
+            for i in range(num_health_districts):
+                for j in range(num_health_districts):
+                    y[i,j,t].start = resultsy['value'][(i,j,t)]
+                    for k in range(num_health_districts):
+                        z[i,j,k,t].start = resultyz['value'][(i,j,k,t)]
         # Set objective
         ##
         cost_y = gp.quicksum(y[i, j, t] * (2 * c_matrix[i][j]) for i in range(num_health_districts)
@@ -220,12 +217,14 @@ for limit_site in range(6,7):
         #upper bound on x
         lm.addConstr(x.sum()<=limit_site)
         #test on the real case
-        lm.addConstr(x[10] == 1)
-        lm.addConstr(x[12] == 1)
-        lm.addConstr(x[23] == 1)
-        lm.addConstr(x[17] == 1)
-        lm.addConstr(x[3] == 1)
-        lm.addConstr(x[20] == 1)
+# =============================================================================
+#         lm.addConstr(x[10] == 1)
+#         lm.addConstr(x[12] == 1)
+#         lm.addConstr(x[23] == 1)
+#         lm.addConstr(x[17] == 1)
+#         lm.addConstr(x[3] == 1)
+#         lm.addConstr(x[20] == 1)
+# =============================================================================
         #smooth
         for t in range(2):
             for i in range(num_health_districts):
@@ -356,7 +355,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/actual_od_4time_total_10lambda_odweighted.pkl')
+df.to_pickle('Results/base_od_4time_emp_10lambda_popweighted.pkl')
 print('saved')
 ################################
 #simple formulation
