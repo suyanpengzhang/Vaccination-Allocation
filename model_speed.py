@@ -176,7 +176,7 @@ for limit_site in range(6,7):
     with open('data/weights_bc.pkl', 'rb') as file:
         weights_bc = pickle.load(file)
     weights_bc = totalpop.copy()
-    #weights = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
+    weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
     lambda_ = 10
     try:
