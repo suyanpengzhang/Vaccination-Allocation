@@ -355,8 +355,8 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/base_od_4time_emp_10lambda_popweighted.pkl')
-print('saved')
+#df.to_pickle('Results/base_od_4time_emp_10lambda_popweighted.pkl')
+#print('saved')
 ################################
 #simple formulation
 # =============================================================================
