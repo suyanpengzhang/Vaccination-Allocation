@@ -11,6 +11,14 @@ import pandas as pd
 import pickle
 import random
 import time
+import os
+
+# Replace this with the path to your actual license file
+path_to_license_file = '/Users/suyanpengzhang/gurobi.lic'
+
+# Set the environment variable
+os.environ['GRB_LICENSE_FILE'] = path_to_license_file
+
 
 # Record the start time
 start_time = time.time()
@@ -92,7 +100,7 @@ for i in range(26):
     for j in range(26):
         value[i,j] = int(value[i,j])
 value_weights = value.copy()
-#value = np.zeros((26,26))
+value = np.zeros((26,26))
 
 emp=[0.9785489423063246,
 0.9749523393023726,
@@ -160,25 +168,32 @@ sol = []
 # =============================================================================
 #HL = np.ones(26)*np.array([random.random() for _ in range(26)])*totalpop
 HL = np.ones(26)*totalpop*emp
-with open("Results/base_od_4time_emp_10lambda_popweighted.pkl", "rb") as file:
-    initials = pickle.load(file)
-dfxrand = initials[initials.name=='x']
-dfyrand = initials[initials.name=='y']
-dfzrand = initials[initials.name=='z']
-groupedx = dfxrand.groupby(['i'])
-resultsx = groupedx.sum()
-groupedy = dfyrand.groupby(['i', 'j','t'])
-resultsy = groupedy.sum()
-groupedz = dfzrand.groupby(['i', 'j','k','t'])
-resultyz = groupedz.sum()
+# =============================================================================
+# with open("Results/base_od_4time_emp_10lambda.pkl", "rb") as file:
+#     initials = pickle.load(file)
+# dfxrand = initials[initials.name=='x']
+# dfyrand = initials[initials.name=='y']
+# dfzrand = initials[initials.name=='z']
+# groupedx = dfxrand.groupby(['i'])
+# resultsx = groupedx.sum()
+# groupedy = dfyrand.groupby(['i', 'j','t'])
+# resultsy = groupedy.sum()
+# groupedz = dfzrand.groupby(['i', 'j','k','t'])
+# resultyz = groupedz.sum()
+# =============================================================================
 for limit_site in range(6,7):
     print('#######################################################################')
-    with open('data/weights_bc.pkl', 'rb') as file:
-        weights_bc = pickle.load(file)
-    weights_bc = totalpop.copy()
+# =============================================================================
+#     with open('data/weights_bc.pkl', 'rb') as file:
+#         weights_bc = pickle.load(file)
+# =============================================================================
+# =============================================================================
+#     weights_bc = totalpop.copy()
+# =============================================================================
     weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
     lambda_ = 10
+    lambda1_ = 150
     try:
     
         # Create a new model
@@ -191,16 +206,21 @@ for limit_site in range(6,7):
         z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
+        test = lm.addVar(vtype=GRB.CONTINUOUS, name="t") 
         ##initial
-        for i in range(num_health_districts):
-            x[i].start = resultsx['value'][i]
-            #lm.addConstr(x[i] == resultsx['value'][i])
-        for t in range(time_periods):
-            for i in range(num_health_districts):
-                for j in range(num_health_districts):
-                    y[i,j,t].start = resultsy['value'][(i,j,t)]
-                    for k in range(num_health_districts):
-                        z[i,j,k,t].start = resultyz['value'][(i,j,k,t)]
+# =============================================================================
+#         for i in range(num_health_districts):
+#             #x[i].start = resultsx['value'][i]
+#             lm.addConstr(x[i] == resultsx['value'][i])
+# =============================================================================
+# =============================================================================
+#         for t in range(time_periods):
+#             for i in range(num_health_districts):
+#                 for j in range(num_health_districts):
+#                     y[i,j,t].start = resultsy['value'][(i,j,t)]
+#                     for k in range(num_health_districts):
+#                         z[i,j,k,t].start = resultyz['value'][(i,j,k,t)]
+# =============================================================================
         # Set objective
         ##
         cost_y = gp.quicksum(y[i, j, t] * (2 * c_matrix[i][j]) for i in range(num_health_districts)
@@ -211,11 +231,20 @@ for limit_site in range(6,7):
         
         cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**t) for t in range(time_periods) for i in range(num_health_districts))
         #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
-        lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
+        #p0
+        lm.setObjective(cost_y+cost_z,GRB.MINIMIZE)
+
+        #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda1_*(s[0]+s[1]),GRB.MINIMIZE)
 
         # 
         #upper bound on x
         lm.addConstr(x.sum()<=limit_site)
+        lm.addConstr(x[10] == 1)
+        lm.addConstr(x[6] == 1)
+        lm.addConstr(x[3] == 1)
+        lm.addConstr(x[4] == 1)
+        lm.addConstr(x[18] == 1)
+        lm.addConstr(x[23] == 1)
         #test on the real case
 # =============================================================================
 #         lm.addConstr(x[10] == 1)
@@ -229,7 +258,10 @@ for limit_site in range(6,7):
         for t in range(2):
             for i in range(num_health_districts):
                 for j in range(num_health_districts):
-                    lm.addConstr(HL[i]-vv[t,i]-HL[j]+vv[t,j]<=s[t])
+                    lm.addConstr(gp.quicksum(y[i,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
+                                 +gp.quicksum(z[i,i1,i2,t1] for i1 in range(num_health_districts) for i2 in range(num_health_districts) for t1 in range(t+1))
+                                 -gp.quicksum(y[j,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
+                                              -gp.quicksum(z[j,i1,i2,t1] for i1 in range(num_health_districts) for i2 in range(num_health_districts) for t1 in range(t+1))<=s[t])
         for i in range(num_health_districts):
             #noncommuter get vaccinated
             lm.addConstr(y.sum(i, '*', '*')==totalpop[i]-np.sum(value,axis=1)[i])
@@ -290,6 +322,8 @@ for v in vars_:
     if v.VarName[0]=='s':
         print('%s %f' % (v.VarName, v.X))
     if v.VarName[0]=='v':
+        print('%s %f' % (v.VarName, v.X))
+    if v.VarName[0]=='t':
         print('%s %f' % (v.VarName, v.X))
 print(ans)
 ######
@@ -355,7 +389,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-#df.to_pickle('Results/base_od_4time_emp_10lambda_popweighted.pkl')
+df.to_pickle('Results/base_p0.pkl')
 #print('saved')
 ################################
 #simple formulation
