@@ -193,7 +193,7 @@ for limit_site in range(6,7):
     weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
     lambda_ = 10
-    lambda1_ = 150
+    lambda1_ = 800
     try:
     
         # Create a new model
@@ -232,9 +232,9 @@ for limit_site in range(6,7):
         cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**t) for t in range(time_periods) for i in range(num_health_districts))
         #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
         #p0
-        lm.setObjective(cost_y+cost_z,GRB.MINIMIZE)
+        #lm.setObjective(cost_y+cost_z,GRB.MINIMIZE)
 
-        #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda1_*(s[0]+s[1]),GRB.MINIMIZE)
+        lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda1_*(s[0]+s[1]),GRB.MINIMIZE)
 
         # 
         #upper bound on x
@@ -389,7 +389,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/base_p0.pkl')
+df.to_pickle('Results/base_varyinglambda1_800.pkl')
 #print('saved')
 ################################
 #simple formulation
