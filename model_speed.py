@@ -26,10 +26,10 @@ start_time = time.time()
 
 num_health_districts = 26
 time_periods = 6
-od_flow = pd.read_csv('data/mean_df_20210224_20210424.csv')
+od_flow = pd.read_csv('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/mean_df_20210224_20210424.csv')
 #c_m = pd.read_csv('C_matrix.csv')
 #c_m_v = c_m.values[:,1:]
-with open("data/travel_time.pkl", "rb") as file:
+with open("/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/travel_time.pkl", "rb") as file:
     c_m_v = pickle.load(file)
 #c_matrix is the inconvinence cost matrix
 c_matrix =np.array([np.array([float(i) for i in j ])for j in c_m_v])
@@ -100,7 +100,7 @@ for i in range(26):
     for j in range(26):
         value[i,j] = int(value[i,j])
 value_weights = value.copy()
-value = np.zeros((26,26))
+#value = np.zeros((26,26))
 
 emp=[0.9785489423063246,
 0.9749523393023726,
@@ -193,7 +193,7 @@ for limit_site in range(6,7):
     weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
     lambda_ = 10
-    lambda1_ = 800
+    lambda1_ = 143*np.mean(totalpop)
     try:
     
         # Create a new model
@@ -231,7 +231,7 @@ for limit_site in range(6,7):
         
         cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**t) for t in range(time_periods) for i in range(num_health_districts))
         #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
-        #p0
+        #p1 for p0 change values matrix to zeros
         #lm.setObjective(cost_y+cost_z,GRB.MINIMIZE)
 
         lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda1_*(s[0]+s[1]),GRB.MINIMIZE)
@@ -239,29 +239,29 @@ for limit_site in range(6,7):
         # 
         #upper bound on x
         lm.addConstr(x.sum()<=limit_site)
-        lm.addConstr(x[10] == 1)
-        lm.addConstr(x[6] == 1)
-        lm.addConstr(x[3] == 1)
-        lm.addConstr(x[4] == 1)
-        lm.addConstr(x[18] == 1)
-        lm.addConstr(x[23] == 1)
-        #test on the real case
 # =============================================================================
 #         lm.addConstr(x[10] == 1)
-#         lm.addConstr(x[12] == 1)
-#         lm.addConstr(x[23] == 1)
-#         lm.addConstr(x[17] == 1)
+#         lm.addConstr(x[6] == 1)
 #         lm.addConstr(x[3] == 1)
-#         lm.addConstr(x[20] == 1)
+#         lm.addConstr(x[4] == 1)
+#         lm.addConstr(x[18] == 1)
+#         lm.addConstr(x[23] == 1)
 # =============================================================================
+        #test on the real case
+        lm.addConstr(x[10] == 1)
+        lm.addConstr(x[12] == 1)
+        lm.addConstr(x[23] == 1)
+        lm.addConstr(x[17] == 1)
+        lm.addConstr(x[3] == 1)
+        lm.addConstr(x[20] == 1)
         #smooth
         for t in range(2):
             for i in range(num_health_districts):
                 for j in range(num_health_districts):
-                    lm.addConstr(gp.quicksum(y[i,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
-                                 +gp.quicksum(z[i,i1,i2,t1] for i1 in range(num_health_districts) for i2 in range(num_health_districts) for t1 in range(t+1))
-                                 -gp.quicksum(y[j,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
-                                              -gp.quicksum(z[j,i1,i2,t1] for i1 in range(num_health_districts) for i2 in range(num_health_districts) for t1 in range(t+1))<=s[t])
+                    lm.addConstr((gp.quicksum(y[i,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
+                                 +gp.quicksum(z[i,i1,i2,t1] for i1 in range(num_health_districts) for i2 in range(num_health_districts) for t1 in range(t+1)))/(totalpop[i])
+                                 -(gp.quicksum(y[j,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
+                                              +gp.quicksum(z[j,i1,i2,t1] for i1 in range(num_health_districts) for i2 in range(num_health_districts) for t1 in range(t+1)))/(totalpop[j])<=s[t])
         for i in range(num_health_districts):
             #noncommuter get vaccinated
             lm.addConstr(y.sum(i, '*', '*')==totalpop[i]-np.sum(value,axis=1)[i])
@@ -389,7 +389,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('Results/base_varyinglambda1_800.pkl')
+df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_emp.pkl')
 #print('saved')
 ################################
 #simple formulation
