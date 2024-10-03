@@ -192,8 +192,8 @@ for limit_site in range(6,7):
 # =============================================================================
     weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
-    lambda_ = 10
-    lambda1_ = 143*np.mean(totalpop)
+    lambda_ = 8.5
+    lambda1_ = 153.5*np.mean(totalpop)
     try:
     
         # Create a new model
