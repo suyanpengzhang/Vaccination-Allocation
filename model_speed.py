@@ -89,6 +89,7 @@ districts = {0: 'Antelope Valley',
              23: 'Inglewood', 
              24: 'Long Beach', 
              25: 'Torrance'}
+
 for i in range(26):
     if totalpop[i]<max(flowin[i],flowout[i]):
         for j in range(26):
@@ -132,6 +133,14 @@ emp=[0.9785489423063246,
 #compute dijk
 ################################
 D = np.zeros((26,26,26))
+# =============================================================================
+# c_matrix[0,0]=30
+# c_matrix[3,3]=20
+# c_matrix[4,4]=20
+# c_matrix[7,7]=10
+# c_matrix[9,9]=5
+# c_matrix[13,13]=10
+# =============================================================================
 ccc= 0
 for i in range(26):
     for j in range(26):
@@ -183,17 +192,13 @@ HL = np.ones(26)*totalpop*emp
 # =============================================================================
 for limit_site in range(6,7):
     print('#######################################################################')
-# =============================================================================
-#     with open('data/weights_bc.pkl', 'rb') as file:
-#         weights_bc = pickle.load(file)
-# =============================================================================
-# =============================================================================
-#     weights_bc = totalpop.copy()
-# =============================================================================
+    with open('data/weights_prv.pkl', 'rb') as file:
+        weights_bc = pickle.load(file)
+    weights_bc = totalpop.copy()
     weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
-    lambda_ = 8.5
-    lambda1_ = 153.5*np.mean(totalpop)
+    lambda_ = 9
+    lambda1_ = 150*np.mean(totalpop)
     try:
     
         # Create a new model
@@ -229,7 +234,7 @@ for limit_site in range(6,7):
                      for j in range(num_health_districts) for k in range(num_health_districts)
                      for t in range(time_periods))
         
-        cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**t) for t in range(time_periods) for i in range(num_health_districts))
+        cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**(t)) for t in range(time_periods) for i in range(num_health_districts))
         #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
         #p1 for p0 change values matrix to zeros
         #lm.setObjective(cost_y+cost_z,GRB.MINIMIZE)
@@ -239,21 +244,21 @@ for limit_site in range(6,7):
         # 
         #upper bound on x
         lm.addConstr(x.sum()<=limit_site)
+        lm.addConstr(x[10] == 1)
+        lm.addConstr(x[6] == 1)
+        lm.addConstr(x[3] == 1)
+        lm.addConstr(x[4] == 1)
+        lm.addConstr(x[18] == 1)
+        lm.addConstr(x[23] == 1)
+        #test on the real case
 # =============================================================================
 #         lm.addConstr(x[10] == 1)
-#         lm.addConstr(x[6] == 1)
-#         lm.addConstr(x[3] == 1)
-#         lm.addConstr(x[4] == 1)
-#         lm.addConstr(x[18] == 1)
+#         lm.addConstr(x[12] == 1)
 #         lm.addConstr(x[23] == 1)
+#         lm.addConstr(x[17] == 1)
+#         lm.addConstr(x[3] == 1)
+#         lm.addConstr(x[20] == 1)
 # =============================================================================
-        #test on the real case
-        lm.addConstr(x[10] == 1)
-        lm.addConstr(x[12] == 1)
-        lm.addConstr(x[23] == 1)
-        lm.addConstr(x[17] == 1)
-        lm.addConstr(x[3] == 1)
-        lm.addConstr(x[20] == 1)
         #smooth
         for t in range(2):
             for i in range(num_health_districts):
@@ -389,7 +394,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_emp.pkl')
+df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_popu.pkl')
 #print('saved')
 ################################
 #simple formulation
