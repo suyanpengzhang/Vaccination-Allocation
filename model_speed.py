@@ -25,7 +25,7 @@ start_time = time.time()
 
 
 num_health_districts = 26
-time_periods = 6
+time_periods = 24
 od_flow = pd.read_csv('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/mean_df_20210224_20210424.csv')
 #c_m = pd.read_csv('C_matrix.csv')
 #c_m_v = c_m.values[:,1:]
@@ -210,7 +210,7 @@ for limit_site in range(6,7):
         y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="y")
         z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
-        s = lm.addVars(2,vtype=GRB.CONTINUOUS, name="s") 
+        s = lm.addVars(8,vtype=GRB.CONTINUOUS, name="s") 
         test = lm.addVar(vtype=GRB.CONTINUOUS, name="t") 
         ##initial
 # =============================================================================
@@ -234,12 +234,12 @@ for limit_site in range(6,7):
                      for j in range(num_health_districts) for k in range(num_health_districts)
                      for t in range(time_periods))
         
-        cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**(t)) for t in range(time_periods) for i in range(num_health_districts))
+        cost_herd = gp.quicksum(vv[t,i]*weights[i]*(0.9**(t/4)) for t in range(time_periods) for i in range(num_health_districts))
         #lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda_*15*(s[0]+s[1]),GRB.MINIMIZE)
         #p1 for p0 change values matrix to zeros
         #lm.setObjective(cost_y+cost_z,GRB.MINIMIZE)
 
-        lm.setObjective(cost_y+cost_z+lambda_*cost_herd+lambda1_*(s[0]+s[1]),GRB.MINIMIZE)
+        lm.setObjective(cost_y+cost_z+0.25*lambda_*cost_herd+0.25*lambda1_*(s[0]+s[1]+s[2]+s[3]+s[4]+s[5]+s[6]+s[7]),GRB.MINIMIZE)
 
         # 
         #upper bound on x
@@ -260,7 +260,7 @@ for limit_site in range(6,7):
 #         lm.addConstr(x[20] == 1)
 # =============================================================================
         #smooth
-        for t in range(2):
+        for t in range(8):
             for i in range(num_health_districts):
                 for j in range(num_health_districts):
                     lm.addConstr((gp.quicksum(y[i,i1,t1] for i1 in range(num_health_districts) for t1 in range(t+1))
@@ -276,12 +276,12 @@ for limit_site in range(6,7):
                              -gp.quicksum(z[i,j,k,t1] for j in range(num_health_districts) for k in range(num_health_districts) for t1 in range(t+1))
                              +HL[i])
                 lm.addConstr(vv[t,i]>=0)
-                lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=400000)
+                lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=100000)
                 for j in range(num_health_districts):
-                    lm.addConstr(y[i,j,t]<=400000*x[j])
+                    lm.addConstr(y[i,j,t]<=100000*x[j])
                     lm.addConstr(y[i,j,t]>=0)
                     for k in range(num_health_districts):
-                        lm.addConstr(z[i,j,k,t]<=400000*x[k])
+                        lm.addConstr(z[i,j,k,t]<=100000*x[k])
                         lm.addConstr(z[i,j,k,t]>=0)
             for j in range(num_health_districts):
                 #commuter get vaccinated
@@ -338,7 +338,7 @@ loc_j = [];
 loc_k = [];
 loc_t = [];
 value_sol = [];
-real_v = np.zeros((6,26))
+real_v = np.zeros((24,26))
 v_i = 0 
 s0 = 0
 s1 = 0
@@ -394,7 +394,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
-df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_popu.pkl')
+df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_weekly.pkl')
 #print('saved')
 ################################
 #simple formulation
