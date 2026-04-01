@@ -192,9 +192,9 @@ HL = np.ones(26)*totalpop*emp
 # =============================================================================
 for limit_site in range(6,7):
     print('#######################################################################')
-    with open('data/weights_prv.pkl', 'rb') as file:
-        weights_bc = pickle.load(file)
-    weights_bc = totalpop.copy()
+    #with open('data/weights_prv.pkl', 'rb') as file:
+    #    weights_bc = pickle.load(file)
+    #weights_bc = totalpop.copy()
     weights_bc = 50*np.array(np.sum(value_weights,axis=1))/np.sum(np.array(value_weights))
     weights = 50*np.array(weights_bc)/np.sum(np.array(weights_bc))
     lambda_ = 9
@@ -207,8 +207,8 @@ for limit_site in range(6,7):
         # Create variables
         
         x = lm.addVars(num_health_districts,vtype=GRB.BINARY, name="x") 
-        y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="y")
-        z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
+        y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.CONTINUOUS, name="y")
+        z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.CONTINUOUS, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(8,vtype=GRB.CONTINUOUS, name="s") 
         test = lm.addVar(vtype=GRB.CONTINUOUS, name="t") 
@@ -393,7 +393,11 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # print('**************************')
 # =============================================================================
 
+
 df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
+
+
+
 df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_continuous.pkl')
 #print('saved')
 ################################
