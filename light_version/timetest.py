@@ -26,10 +26,10 @@ start_time = time.time()
 
 num_health_districts = 26
 time_periods = 6
-od_flow = pd.read_csv('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/mean_df_20210224_20210424.csv')
+od_flow = pd.read_csv('mean_df_20210224_20210424.csv')
 #c_m = pd.read_csv('C_matrix.csv')
 #c_m_v = c_m.values[:,1:]
-with open("/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/travel_time.pkl", "rb") as file:
+with open("travel_time.pkl", "rb") as file:
     c_m_v = pickle.load(file)
 #c_matrix is the inconvinence cost matrix
 c_matrix =np.array([np.array([float(i) for i in j ])for j in c_m_v])
@@ -270,12 +270,12 @@ for limit_site in range(6,7):
                              -gp.quicksum(z[i,j,k,t1] for j in range(num_health_districts) for k in range(num_health_districts) for t1 in range(t+1))
                              +HL[i])
                 lm.addConstr(vv[t,i]>=0)
-                lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=400000)
+                lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=100000)
                 for j in range(num_health_districts):
-                    lm.addConstr(y[i,j,t]<=400000*x[j])
+                    lm.addConstr(y[i,j,t]<=100000*x[j])
                     lm.addConstr(y[i,j,t]>=0)
                     for k in range(num_health_districts):
-                        lm.addConstr(z[i,j,k,t]<=400000*x[k])
+                        lm.addConstr(z[i,j,k,t]<=100000*x[k])
                         lm.addConstr(z[i,j,k,t]>=0)
             for j in range(num_health_districts):
                 #commuter get vaccinated

@@ -26,10 +26,10 @@ start_time = time.time()
 
 num_health_districts = 26
 time_periods = 6
-od_flow = pd.read_csv('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/mean_df_20210224_20210424.csv')
+od_flow = pd.read_csv('mean_df_20210224_20210424.csv')
 #c_m = pd.read_csv('C_matrix.csv')
 #c_m_v = c_m.values[:,1:]
-with open("/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/Data/travel_time.pkl", "rb") as file:
+with open("travel_time.pkl", "rb") as file:
     c_m_v = pickle.load(file)
 #c_matrix is the inconvinence cost matrix
 c_matrix =np.array([np.array([float(i) for i in j ])for j in c_m_v])
@@ -207,8 +207,8 @@ for limit_site in range(6,7):
         # Create variables
         
         x = lm.addVars(num_health_districts,vtype=GRB.BINARY, name="x") 
-        y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.BINARY, name="y")
-        z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.BINARY, name="z")
+        y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.CONTINUOUS, name="y")
+        z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.CONTINUOUS, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(8,vtype=GRB.CONTINUOUS, name="s") 
         test = lm.addVar(vtype=GRB.CONTINUOUS, name="t") 
@@ -244,6 +244,12 @@ for limit_site in range(6,7):
         # 
         #upper bound on x
         lm.addConstr(x.sum()<=limit_site)
+        lm.addConstr(x[10] == 1)
+        lm.addConstr(x[6] == 1)
+        lm.addConstr(x[3] == 1)
+        lm.addConstr(x[4] == 1)
+        lm.addConstr(x[18] == 1)
+        lm.addConstr(x[23] == 1)
         #test on the real case
 # =============================================================================
 #         lm.addConstr(x[10] == 1)
@@ -392,7 +398,7 @@ df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,
 
 
 
-#df.to_pickle('/Users/suyanpengzhang/Documents/GitHub.nosync/Vaccination-Allocation/RevisedResults/P2_continuous.pkl')
+df.to_pickle('P2_continuous.pkl')
 #print('saved')
 ################################
 #simple formulation
