@@ -351,21 +351,21 @@ for v in vars_:
         loc_j.append(0)
         loc_k.append(0)
         loc_t.append(0)
-        value_sol.append(v.X)
+        value_sol.append(int(v.X))
     if v.VarName[0] == 'y':
         name.append(v.VarName[0])
         loc_i.append(int(v.VarName[2:-1].split(',')[0]))
         loc_j.append(int(v.VarName[2:-1].split(',')[1]))
         loc_k.append(0)
         loc_t.append(int(v.VarName[2:-1].split(',')[2]))
-        value_sol.append(v.X)
+        value_sol.append(int(v.X))
     if v.VarName[0] == 'z':
         name.append(v.VarName[0])
         loc_i.append(int(v.VarName[2:-1].split(',')[0]))
         loc_j.append(int(v.VarName[2:-1].split(',')[1]))
         loc_k.append(int(v.VarName[2:-1].split(',')[2]))
         loc_t.append(int(v.VarName[2:-1].split(',')[3]))
-        value_sol.append(v.X)
+        value_sol.append(int(v.X))
     if v.VarName[0] == 'v':
         real_v[v_i,v_j] = v.X
         if v_j ==25:
@@ -394,7 +394,7 @@ print(f"Runtime: {elapsed_time_hours:.2f} hours")
 # =============================================================================
 
 
-df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value':value_sol})
+df = pd.DataFrame({'name': name, 'i': loc_i, 'j': loc_j, 'k': loc_k, 't': loc_t,'value': value_sol})
 
 
 

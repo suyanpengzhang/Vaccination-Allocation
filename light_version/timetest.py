@@ -207,8 +207,8 @@ for limit_site in range(6,7):
         # Create variables
         
         x = lm.addVars(num_health_districts,vtype=GRB.BINARY, name="x") 
-        y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.BINARY, name="y")
-        z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.BINARY, name="z")
+        y = lm.addVars(num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="y")
+        z = lm.addVars(num_health_districts,num_health_districts,num_health_districts,time_periods,vtype=GRB.INTEGER, name="z")
         vv = lm.addVars(time_periods,num_health_districts,vtype=GRB.CONTINUOUS, name="v") 
         s = lm.addVars(8,vtype=GRB.CONTINUOUS, name="s") 
         test = lm.addVar(vtype=GRB.CONTINUOUS, name="t") 
@@ -270,12 +270,12 @@ for limit_site in range(6,7):
                              -gp.quicksum(z[i,j,k,t1] for j in range(num_health_districts) for k in range(num_health_districts) for t1 in range(t+1))
                              +HL[i])
                 lm.addConstr(vv[t,i]>=0)
-                lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=100000)
+                lm.addConstr(y.sum( '*',i, t)+z.sum('*','*',i,t)<=400000)
                 for j in range(num_health_districts):
-                    lm.addConstr(y[i,j,t]<=100000*x[j])
+                    lm.addConstr(y[i,j,t]<=400000*x[j])
                     lm.addConstr(y[i,j,t]>=0)
                     for k in range(num_health_districts):
-                        lm.addConstr(z[i,j,k,t]<=100000*x[k])
+                        lm.addConstr(z[i,j,k,t]<=400000*x[k])
                         lm.addConstr(z[i,j,k,t]>=0)
             for j in range(num_health_districts):
                 #commuter get vaccinated
